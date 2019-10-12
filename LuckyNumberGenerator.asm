@@ -1,5 +1,5 @@
-; NO.9 ����ʼ����ʱ����Ļ���������һ��ʮλ���ֵĺ���
-; �ÿո�ʱֹͣ���õ��ĺ��������˺�
+; NO.9 程序开始运行时在屏幕上随机跳动一组十位数字的号码
+; 敲空格时停止，得到的号码是幸运号
 
 DATA SEGMENT
 	SINGLE_NUMBER DB 20 DUP(0),'$'
@@ -10,7 +10,7 @@ CODE SEGMENT
 	ASSUME CS:CODE , DS:DATA
 
 START:
-	;���ݶδ���DS��
+	;数据段存入DS中
 	MOV AX,DATA
 	MOV DS,AX 
 	
@@ -24,10 +24,10 @@ RANDOM:
 	LEA SI,SINGLE_NUMBER
 
 
-;����ϵͳʱ�����������
+;利用系统时钟生成随机数
 TIME_RANDOM:
-	;��ȡ��ǰʱ�䲢�����
-	DB 0FH,31H ;RDTSCָ���ȡʱ���ǩ���������������DX:AX
+	;读取当前时间并随机化
+	DB 0FH,31H ;RDTSC指令，读取时间标签计数器，将其读入DX:AX
 	OR AL,AH 
 	INC AL
 	;DEC AH
@@ -35,14 +35,14 @@ TIME_RANDOM:
 	;XOR AH,00
 	
 	;MOV DL,AH
-	MOV AH,0 ;��ȡϵͳʱ�Ӽ�����
+	MOV AH,0 ;读取系统时钟计数器
 
-	MOV BL,100 ;����Ϊ100������0-99����
+	MOV BL,100 ;除数为100，产生0-99余数
 	DIV BL
-	MOV AL,AH ;������AL����Ϊ�����
-	AAM  ;�����Ĵ���AL��ֵ AH=AL/10 , AL=AL%10
+	MOV AL,AH ;余数存AL，作为随机数
+	AAM  ;调整寄存器AL的值 AH=AL/10 , AL=AL%10
 	OR AX,3030H ;
-	;XCHG AL,AH ;��Ҫ�ɲ�Ҫ
+	;XCHG AL,AH ;可要可不要
 	
 	MOV WORD PTR SINGLE_NUMBER[SI],AX
 	ADD SI,2
@@ -50,7 +50,7 @@ TIME_RANDOM:
 LOOP TIME_RANDOM
 
 
-;�ƶ����λ��
+;移动光标位置
     MOV BH,0
     MOV DH,2
     MOV dl,1
@@ -62,19 +62,19 @@ MOV AH,9H
 INT 21H
 
 
-MOV AH,1H ;�ȴ��������벢����
+MOV AH,1H ;等待键盘输入并回显
 INT 16H 
 JZ RANDOM ;
 
 
 SPACE:
-	;�Ӽ��̶���һ���ַ�
+	;从键盘读入一个字符
 	MOV AH,0
 	INT 16H
-	;����˳�
+	;检测退出
 	CMP AL,'0'
 	JZ EXIT
-	;���ո�
+	;检测空格
 	CMP AL,' ' 
 	JNZ RANDOM
 
